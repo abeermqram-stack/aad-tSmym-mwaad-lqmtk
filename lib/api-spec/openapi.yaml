@@ -10,6 +10,14 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: meals
+    description: Meal planning and completion
+  - name: dashboard
+    description: Daily and weekly summaries
+  - name: preferences
+    description: User preferences
+  - name: push
+    description: Web push notification registration
 paths:
   /healthz:
     get:
@@ -24,6 +32,260 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /meals:
+    get:
+      operationId: listMeals
+      tags: [meals]
+      summary: List a user's meals for a date
+      parameters:
+        - in: query
+          name: date
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Meals scheduled for the requested date
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Meal"
+    post:
+      operationId: createMeal
+      tags: [meals]
+      summary: Create a recurring meal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MealInput"
+      responses:
+        "201":
+          description: Meal created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealPlan"
+  /meals/{id}:
+    patch:
+      operationId: updateMeal
+      tags: [meals]
+      summary: Update a scheduled meal
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MealUpdate"
+      responses:
+        "200":
+          description: Meal updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealPlan"
+        "404":
+          description: Meal not found
+    delete:
+      operationId: deleteMeal
+      tags: [meals]
+      summary: Delete a scheduled meal
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Meal deleted
+        "404":
+          description: Meal not found
+  /meals/{id}/completion:
+    put:
+      operationId: setMealCompletion
+      tags: [meals]
+      summary: Set meal completion for a calendar date
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MealCompletionInput"
+      responses:
+        "200":
+          description: Completion state saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealCompletion"
+        "404":
+          description: Meal not found
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get the meal progress and next reminder for one day
+      parameters:
+        - in: query
+          name: date
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Daily dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /journey/summary:
+    get:
+      operationId: getJourneySummary
+      tags: [dashboard]
+      summary: Get daily completion totals for a date range
+      parameters:
+        - in: query
+          name: startDate
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: endDate
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Completion totals by date
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DaySummary"
+  /preferences:
+    get:
+      operationId: getPreferences
+      tags: [preferences]
+      summary: Get the signed-in user's notification preferences
+      responses:
+        "200":
+          description: User preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPreferences"
+    patch:
+      operationId: updatePreferences
+      tags: [preferences]
+      summary: Update notification preferences and time zone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PreferencesUpdate"
+      responses:
+        "200":
+          description: Updated user preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPreferences"
+  /push/public-key:
+    get:
+      operationId: getPushPublicKey
+      tags: [push]
+      summary: Get the public VAPID key for browser subscription
+      responses:
+        "200":
+          description: Public push configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushPublicKey"
+  /push/status:
+    get:
+      operationId: getPushStatus
+      tags: [push]
+      summary: Get this user's registered push device count
+      responses:
+        "200":
+          description: Push status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushStatus"
+  /push/subscriptions:
+    post:
+      operationId: createPushSubscription
+      tags: [push]
+      summary: Register or update this browser's push subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushSubscriptionInput"
+      responses:
+        "201":
+          description: Push subscription registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushStatus"
+    delete:
+      operationId: deletePushSubscription
+      tags: [push]
+      summary: Remove this browser's push subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushSubscriptionDelete"
+      responses:
+        "200":
+          description: Push subscription removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushStatus"
+  /push/test:
+    post:
+      operationId: sendTestNotification
+      tags: [push]
+      summary: Send a test notification to the signed-in user's devices
+      responses:
+        "200":
+          description: Test notification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushTestResult"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +295,213 @@ components:
           type: string
       required:
         - status
+    Meal:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        time:
+          type: string
+          pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+        note:
+          type: string
+        weekdays:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+        completed:
+          type: boolean
+      required: [id, name, time, note, weekdays, completed]
+    MealPlan:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        time:
+          type: string
+          pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+        note:
+          type: string
+        weekdays:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+      required: [id, name, time, note, weekdays]
+    MealInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        time:
+          type: string
+          pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+        note:
+          type: string
+          maxLength: 240
+        weekdays:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+      required: [name, time, weekdays]
+    MealUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        time:
+          type: string
+          pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+        note:
+          type: string
+          maxLength: 240
+        weekdays:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+    MealCompletionInput:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        completed:
+          type: boolean
+      required: [date, completed]
+    MealCompletion:
+      type: object
+      properties:
+        mealId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        completed:
+          type: boolean
+      required: [mealId, date, completed]
+    DashboardSummary:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        totalCount:
+          type: integer
+        doneCount:
+          type: integer
+        progress:
+          type: number
+        nextMeal:
+          anyOf:
+            - $ref: "#/components/schemas/Meal"
+            - type: "null"
+      required: [date, totalCount, doneCount, progress, nextMeal]
+    DaySummary:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        totalCount:
+          type: integer
+        doneCount:
+          type: integer
+      required: [date, totalCount, doneCount]
+    UserPreferences:
+      type: object
+      properties:
+        remindersEnabled:
+          type: boolean
+        timezone:
+          type: string
+        pushEnabled:
+          type: boolean
+        deviceCount:
+          type: integer
+      required: [remindersEnabled, timezone, pushEnabled, deviceCount]
+    PreferencesUpdate:
+      type: object
+      properties:
+        remindersEnabled:
+          type: boolean
+        timezone:
+          type: string
+          minLength: 1
+          maxLength: 80
+    PushPublicKey:
+      type: object
+      properties:
+        publicKey:
+          type: string
+        enabled:
+          type: boolean
+      required: [publicKey, enabled]
+    PushStatus:
+      type: object
+      properties:
+        pushEnabled:
+          type: boolean
+        deviceCount:
+          type: integer
+      required: [pushEnabled, deviceCount]
+    PushSubscriptionKeys:
+      type: object
+      properties:
+        p256dh:
+          type: string
+        auth:
+          type: string
+      required: [p256dh, auth]
+    PushSubscriptionInput:
+      type: object
+      properties:
+        endpoint:
+          type: string
+          format: uri
+          maxLength: 2048
+        expirationTime:
+          type: ["integer", "null"]
+        keys:
+          $ref: "#/components/schemas/PushSubscriptionKeys"
+      required: [endpoint, keys]
+    PushSubscriptionDelete:
+      type: object
+      properties:
+        endpoint:
+          type: string
+          format: uri
+          maxLength: 2048
+      required: [endpoint]
+    PushTestResult:
+      type: object
+      properties:
+        sent:
+          type: boolean
+        deviceCount:
+          type: integer
+        message:
+          type: string
+      required: [sent, deviceCount, message]
 

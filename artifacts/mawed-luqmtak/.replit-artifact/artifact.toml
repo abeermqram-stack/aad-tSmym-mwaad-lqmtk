@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "موعد لقمتك"
+description = "An installable Arabic RTL meal-planning PWA for iPhone. Users can plan daily and weekly meals, record completions, sync schedules through an account, and receive scheduled web push reminders."
+version = "1.0.0"
+id = "artifacts/mawed-luqmtak"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21221
+
+[services.development]
+run = "pnpm --filter @workspace/mawed-luqmtak run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/mawed-luqmtak", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/mawed-luqmtak/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21221"
+BASE_PATH = "/"
