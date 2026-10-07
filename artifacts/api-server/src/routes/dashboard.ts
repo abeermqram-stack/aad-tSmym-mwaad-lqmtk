@@ -15,7 +15,8 @@ import { ensureUserSetup } from "../lib/user-setup";
 const router: IRouter = Router();
 
 router.get("/dashboard/summary", async (req, res) => {
-  const { date } = GetDashboardSummaryQueryParams.parse(req.query);
+  const parsed = GetDashboardSummaryQueryParams.parse(req.query);
+  const date = typeof parsed.date === "string" ? parsed.date : (parsed.date as Date).toISOString().slice(0, 10);
   assertIsoDate(date);
   const userId = authenticatedUserId(req);
   await ensureUserSetup(userId);
@@ -46,7 +47,9 @@ router.get("/dashboard/summary", async (req, res) => {
 });
 
 router.get("/journey/summary", async (req, res) => {
-  const { startDate, endDate } = GetJourneySummaryQueryParams.parse(req.query);
+  const parsed = GetJourneySummaryQueryParams.parse(req.query);
+  const startDate = typeof parsed.startDate === "string" ? parsed.startDate : (parsed.startDate as Date).toISOString().slice(0, 10);
+  const endDate = typeof parsed.endDate === "string" ? parsed.endDate : (parsed.endDate as Date).toISOString().slice(0, 10);
   const dates = dateRangeInclusive(startDate, endDate);
   const userId = authenticatedUserId(req);
   await ensureUserSetup(userId);

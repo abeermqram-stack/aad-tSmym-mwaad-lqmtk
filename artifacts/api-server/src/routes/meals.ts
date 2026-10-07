@@ -4,7 +4,7 @@ import {
   CreateMealBody,
   CreateMealResponse,
   DeleteMealParams,
-  MealCompletionResponse,
+  SetMealCompletionResponse,
   SetMealCompletionBody,
   SetMealCompletionParams,
   UpdateMealBody,
@@ -103,7 +103,8 @@ router.delete("/meals/:id", async (req, res) => {
 router.put("/meals/:id/completion", async (req, res) => {
   const { id } = SetMealCompletionParams.parse(req.params);
   const body = SetMealCompletionBody.parse(req.body);
-  const date = assertIsoDate(body.date);
+  const dateStr = typeof body.date === "string" ? body.date : (body.date as Date).toISOString().slice(0, 10);
+  const date = assertIsoDate(dateStr);
   const userId = authenticatedUserId(req);
   await ensureUserSetup(userId);
 
@@ -132,7 +133,7 @@ router.put("/meals/:id/completion", async (req, res) => {
   }
 
   res.json(
-    MealCompletionResponse.parse({
+    SetMealCompletionResponse.parse({
       mealId: id,
       date,
       completed: body.completed,

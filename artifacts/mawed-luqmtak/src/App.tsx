@@ -1,8 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
-import { ClerkProvider, SignIn, SignUp, useClerk, useUser } from '@clerk/react';
-import { publishableKeyFromHost } from '@clerk/react/internal';
-import { shadcn } from '@clerk/themes';
 import { Redirect, Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import { CalendarDays, Check, ChevronLeft, CirclePlus, Clock3, Flame, House, Leaf, Pencil, Plus, Settings2, Sparkles, Target, Utensils, UserRound, X, Bell, ChartNoAxesColumn, ArrowRight, ChevronDown, CheckCircle2, Trash2, Download, Smartphone, Send, LogOut, RefreshCw } from 'lucide-react';
 import {
@@ -16,38 +13,10 @@ import type { Meal, DaySummary } from '@workspace/api-client-react';
 
 const queryClient = new QueryClient();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
-const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 
 function stripBase(path: string) {
   return basePath && path.startsWith(basePath) ? path.slice(basePath.length) || '/' : path;
 }
-
-const appearance = {
-  theme: shadcn,
-  cssLayerName: 'clerk',
-  options: { logoPlacement: 'inside' as const, logoLinkUrl: basePath || '/', logoImageUrl: `${window.location.origin}${basePath}/logo.svg` },
-  variables: {
-    colorPrimary: '#285f49', colorForeground: '#223c32', colorMutedForeground: '#829087',
-    colorDanger: '#a44b40', colorBackground: '#fbfbf7', colorInput: '#f7f8f2',
-    colorInputForeground: '#31483b', colorNeutral: '#e4e8df', fontFamily: '"Noto Sans Arabic", sans-serif', borderRadius: '1rem',
-  },
-  elements: {
-    rootBox: 'w-full flex justify-center',
-    cardBox: 'bg-[#fbfbf7] rounded-[26px] w-[440px] max-w-full overflow-hidden border border-[#e8eae2]',
-    card: '!shadow-none !border-0 !bg-transparent !rounded-none', footer: '!shadow-none !border-0 !bg-transparent !rounded-none',
-    headerTitle: 'text-[#223c32] font-bold', headerSubtitle: 'text-[#829087]',
-    socialButtonsBlockButtonText: 'text-[#31483b]', formFieldLabel: 'text-[#53655a]',
-    footerActionLink: 'text-[#285f49]', footerActionText: 'text-[#829087]', dividerText: 'text-[#829087]',
-    identityPreviewEditButton: 'text-[#285f49]', formFieldSuccessText: 'text-[#477659]', alertText: 'text-[#7b433c]',
-    logoBox: 'rounded-[14px]', logoImage: 'rounded-[14px]',
-    socialButtonsBlockButton: 'border-[#e4e8df] rounded-[14px]', formButtonPrimary: 'bg-[#285f49] hover:bg-[#204f3c] rounded-[14px]',
-    formFieldInput: 'bg-[#f7f8f2] border-[#e4e8df] text-[#31483b] rounded-[14px]',
-    footerAction: 'text-[#829087]', dividerLine: 'bg-[#e8eae2]', alert: 'rounded-[14px]',
-    otpCodeFieldInput: 'bg-[#f7f8f2] border-[#e4e8df] text-[#31483b]', formFieldRow: 'gap-2', main: 'gap-4',
-  },
-};
-
 const arabicDays = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 const shortDays = ['اثن', 'ثلث', 'أرب', 'خمي', 'جمع', 'سبت', 'أحد'];
 const dateKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -69,50 +38,6 @@ const getCurrentWeek = () => {
     return date;
   });
 };
-
-function ClerkCacheInvalidator() {
-  const { addListener } = useClerk();
-  const client = useQueryClient();
-  const previous = useRef<string | null | undefined>(undefined);
-  useEffect(() => addListener(({ user }) => {
-    const id = user?.id ?? null;
-    if (previous.current !== undefined && previous.current !== id) client.clear();
-    previous.current = id;
-  }), [addListener, client]);
-  return null;
-}
-
-function AuthPage({ mode }: { mode: 'in' | 'up' }) {
-  return <main dir="rtl" className="auth-shell">
-    <div className="auth-brand"><span className="brand-mark"><Utensils size={20} /></span><div><b>موعد لقمتك</b><small>اهتم بنفسك، لقمة بلقمة</small></div></div>
-    <div className="auth-intro"><p>مساحتك اللطيفة</p><h1>{mode === 'in' ? 'أهلًا بعودتك' : 'ابدأ عناية ألطف'}</h1><span>وجباتك ومواعيدك، محفوظة معك أينما كنت.</span></div>
-    {mode === 'in' ? <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /> : <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />}
-  </main>;
-}
-
-function Landing() {
-  const { isSignedIn, isLoaded } = useUser();
-  if (!isLoaded) return <LoadingScreen />;
-  if (isSignedIn) return <Redirect to="/app" />;
-  return <main dir="rtl" className="landing-page">
-    <header className="landing-nav"><div className="auth-brand"><span className="brand-mark"><Utensils size={20} /></span><div><b>موعد لقمتك</b><small>اهتم بنفسك، لقمة بلقمة</small></div></div><a data-testid="link-sign-in-header" className="text-link" href={`${basePath}/sign-in`}>تسجيل الدخول <ArrowRight size={15} /></a></header>
-    <section className="landing-hero">
-      <div className="landing-copy"><span className="eyebrow"><span className="eyebrow-dot" /> رفيق يومك الهادئ</span><h1>تذكّر وجبتك.<br /><em>واطمئن على يومك.</em></h1><p>مواعيد بسيطة تترك لك مساحة تعيش يومك. رتّب وجباتك، وخذ تذكيرًا لطيفًا في وقتها.</p>
-        <div className="landing-actions"><a data-testid="link-sign-up" href={`${basePath}/sign-up`} className="primary-link">ابدأ رحلتك <ArrowRight size={17} /></a><a data-testid="link-sign-in" href={`${basePath}/sign-in`} className="secondary-link">لديك حساب؟</a></div>
-        <div className="landing-proof"><span className="proof-icons"><span><Check size={13} /></span><span><Leaf size={13} /></span><span><Clock3 size={13} /></span></span><span>خطوات صغيرة، على إيقاعك</span></div>
-      </div>
-      <div className="landing-art" aria-label="تصميم توضيحي لمواعيد الوجبات">
-        <div className="art-orbit orbit-a" /><div className="art-orbit orbit-b" />
-        <div className="plate"><div className="plate-center"><Leaf size={46} strokeWidth={1.3} /></div><span className="plate-dot dot-one" /><span className="plate-dot dot-two" /><span className="plate-dot dot-three" /></div>
-        <div className="reminder-note"><span className="note-icon"><Bell size={16} /></span><div><b>حان وقت الغداء</b><small>وجبة متوازنة تعطيك طاقة</small></div><span className="note-time">١:٣٠ م</span></div>
-        <div className="mini-stamp"><Sparkles size={16} /><span>على مهلك</span></div>
-      </div>
-    </section>
-    <section className="landing-values"><div><span className="value-icon"><CalendarDays size={18} /></span><b>خطة تناسبك</b><p>رتّب وجبات الأسبوع بالطريقة التي تحبها.</p></div><div><span className="value-icon gold"><Bell size={18} /></span><b>تذكير في وقته</b><p>تنبيه لطيف يساعدك على تذكّر موعد وجبتك.</p></div><div><span className="value-icon sage"><ChartNoAxesColumn size={18} /></span><b>لاحظ تقدمك</b><p>تابع عاداتك يومًا بعد يوم، دون ضغط.</p></div></section>
-    <footer className="landing-footer"><span>موعد لقمتك</span><span>عناية صغيرة، كل يوم.</span></footer>
-  </main>;
-}
-
 type Page = 'today' | 'week' | 'journey' | 'profile' | 'details';
 function BottomNavigation({ activePage, onNavigate }: { activePage: Page; onNavigate: (page: Page) => void }) {
   const items = [{ page: 'today' as const, label: 'اليوم', icon: House }, { page: 'week' as const, label: 'الأسبوع', icon: CalendarDays }, { page: 'journey' as const, label: 'رحلتي', icon: ChartNoAxesColumn }, { page: 'profile' as const, label: 'حسابي', icon: UserRound }];
@@ -122,8 +47,7 @@ function BottomNavigation({ activePage, onNavigate }: { activePage: Page; onNavi
 }
 
 function AppPlanner() {
-  const { user } = useUser();
-  const { signOut } = useClerk();
+  const user = { firstName: 'مستخدم', primaryEmailAddress: { emailAddress: 'أهلاً بك في موعد لقمتك' } };
   const [activePage, setActivePage] = useState<Page>('today');
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [selectedMealId, setSelectedMealId] = useState('');
@@ -284,7 +208,7 @@ function AppPlanner() {
     </section>
     <section className="mt-4 rounded-[21px] bg-[#e8eee4] p-4"><div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-[13px] bg-white/70 text-[#477659]"><Leaf size={17} /></span><div><p className="text-[12px] font-bold text-[#365947]">عادات ألطف، أيام أجمل</p><p className="mt-1 text-[10px] leading-5 text-[#718276]">خطتك ملكك؛ عدّلها كلما احتجت.</p></div></div></section>
     <button data-testid="button-install-app" onClick={() => void install()} className="mt-4 flex min-h-[52px] w-full items-center justify-between rounded-[16px] border border-[#e8eae2] bg-[#fbfbf7] px-4 text-[11px] font-bold text-[#456752]"><span className="flex items-center gap-2"><Download size={16} /> إضافة موعد لقمتك للشاشة الرئيسية</span><ChevronLeft size={16} /></button>
-    <button data-testid="button-sign-out" onClick={() => void signOut({ redirectUrl: basePath || '/' })} className="mt-4 flex min-h-[46px] w-full items-center justify-center gap-2 rounded-[15px] text-[11px] font-semibold text-[#89958c]"><LogOut size={14} /> تسجيل الخروج</button>{nav}</main>;
+    {nav}</main>;
 
   return <main dir="rtl" className="planner-shell relative px-5 pb-28 pt-[max(20px,env(safe-area-inset-top))]">
     <div className="pointer-events-none absolute -right-24 top-[-100px] h-64 w-64 rounded-full bg-[#e6ede3] opacity-70 blur-3xl" />
@@ -324,31 +248,16 @@ function urlBase64ToBytes(base64String: string) {
   return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
 }
 
-function ProtectedPlanner() {
-  const { isSignedIn, isLoaded } = useUser();
-  if (!isLoaded) return <LoadingScreen />;
-  if (!isSignedIn) return <Redirect to="/" />;
-  return <AppPlanner />;
-}
-
 function Router() {
-  return <Switch><Route path="/" component={Landing} /><Route path="/app" component={ProtectedPlanner} /><Route path="/sign-in/*?" component={() => <AuthPage mode="in" />} /><Route path="/sign-up/*?" component={() => <AuthPage mode="up" />} /><Route component={() => <Redirect to="/" />} /></Switch>;
+  return <Switch><Route path="/" component={AppPlanner} /><Route component={() => <Redirect to="/" />} /></Switch>;
 }
 
-function ClerkApp() {
-  const [, setLocation] = useLocation();
+function App() {
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       void navigator.serviceWorker.register(`${basePath}/service-worker.js`, { scope: `${basePath || ''}/` }).catch(() => undefined);
     }
   }, []);
-  return <ClerkProvider publishableKey={clerkPubKey} proxyUrl={clerkProxyUrl} appearance={appearance} signInUrl={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} localization={{ signIn: { start: { title: 'مرحبًا بعودتك', subtitle: 'سجّل الدخول لمتابعة خطتك' } }, signUp: { start: { title: 'أنشئ حسابك', subtitle: 'ابدأ عناية ألطف بنفسك' } } }} routerPush={(to) => setLocation(stripBase(to))} routerReplace={(to) => setLocation(stripBase(to), { replace: true })}>
-    <QueryClientProvider client={queryClient}><ClerkCacheInvalidator /><Router /></QueryClientProvider>
-  </ClerkProvider>;
-}
-
-function App() {
-  if (!clerkPubKey) throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
-  return <WouterRouter base={basePath}><ClerkApp /></WouterRouter>;
+  return <WouterRouter base={basePath}><QueryClientProvider client={queryClient}><Router /></QueryClientProvider></WouterRouter>;
 }
 export default App;

@@ -53,10 +53,13 @@ export function getClerkProxyHost(req: {
 }
 
 export function clerkProxyMiddleware(): RequestHandler {
-  // Only run proxy in production — Clerk proxying doesn't work for dev instances
+  // Run proxy in all environments to support testing via tunnels (e.g. localhost.run) on mobile devices
+  // without encountering the Clerk interstitial or third-party cookie blocks.
+  /*
   if (process.env.NODE_ENV !== 'production') {
     return (_req, _res, next) => next();
   }
+  */
 
   const secretKey = process.env.CLERK_SECRET_KEY;
   if (!secretKey) {

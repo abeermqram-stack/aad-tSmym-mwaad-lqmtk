@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Mawed Luqmtak</string>
+    <string name="title_activity_main">Mawed Luqmtak</string>
+    <string name="package_name">com.mawed.luqmtak</string>
+    <string name="custom_url_scheme">com.mawed.luqmtak</string>
+</resources>

@@ -150,7 +150,7 @@ export const SetMealCompletionResponse = zod.object({
  * @summary Get the meal progress and next reminder for one day
  */
 export const GetDashboardSummaryQueryParams = zod.object({
-  "date": zod.date()
+  "date": zod.coerce.date()
 })
 
 export const getDashboardSummaryResponseNextMealOneTimeRegExp = new RegExp('^([01][0-9]|2[0-3]):[0-5][0-9]$');
@@ -179,8 +179,8 @@ export const GetDashboardSummaryResponse = zod.object({
  * @summary Get daily completion totals for a date range
  */
 export const GetJourneySummaryQueryParams = zod.object({
-  "startDate": zod.date(),
-  "endDate": zod.date()
+  "startDate": zod.coerce.date(),
+  "endDate": zod.coerce.date()
 })
 
 export const GetJourneySummaryResponseItem = zod.object({
